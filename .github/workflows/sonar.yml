@@ -38,16 +38,19 @@ jobs:
 
       # 6️⃣ SonarCloud code analysis
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v1.11
+        uses: SonarSource/sonarcloud-github-action@v2
         with:
-          projectKey: your_project_key         # Replace with your SonarCloud project key
-          organization: your_organization     # Replace with your SonarCloud organization
-          token: ${{ secrets.SONAR_TOKEN }}   # Make sure SONAR_TOKEN is added in GitHub Secrets
           args: >
+            -Dsonar.projectKey=your_project_key
+            -Dsonar.organization=your_organization
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
+            -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # 7️⃣ Quality Gate check
       - name: Quality Gate Check
-        uses: SonarSource/sonarcloud-quality-gate-action@v1
-
+        uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
