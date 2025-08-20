@@ -1,3 +1,4 @@
+# File: .github/workflows/sonar.yml
 name: SonarCloud Scan
 
 on:
@@ -13,18 +14,37 @@ jobs:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout code
       - uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
+
+      # 4️⃣ Run tests (optional, to generate coverage)
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
+
+      # 5️⃣ SonarCloud scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:
-          organization: "RADhaigude"
-          projectKey: "RADhaigude_react-test"
-          projectName: "react-test"
+          organization: "RADhaigude"              # Your SonarCloud org
+          projectKey: "RADhaigude_react-test"     # Unique project key
+          projectName: "react-test"               # Display name
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 6️⃣ Enforce Quality Gate
+      - name: Check Quality Gate
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: "sonar-quality-gate:check"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
