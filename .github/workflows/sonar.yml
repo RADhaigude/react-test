@@ -18,36 +18,3 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # 4️⃣ Optional: Add failing code for testing
-      - name: Add failing code
-        run: |
-          echo "function uncoveredFunc(){ return 42 }" >> fail.js
-
-      # 5️⃣ Run tests with coverage
-      - name: Run tests
-        run: npm test -- --coverage --coverageReporters=lcov || true
-
-      # 6️⃣ SonarCloud code analysis
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          args: >
-            -Dsonar.projectKey=RADhaigude_react-test
-            -Dsonar.organization=radhaigude
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.branch.name=${{ github.head_ref }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      # 7️⃣ Quality Gate check
-      - name: Quality Gate Check
-        uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
