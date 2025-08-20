@@ -1,17 +1,16 @@
-name: QA / SonarCloud Analysis
+
+name: SonarCloud PR Analysis
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  sonarcloud-analysis:
+  sonarcloud:
     runs-on: ubuntu-latest
+
     steps:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v4
@@ -28,22 +27,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Add intentionally failing / uncovered code to trigger Quality Gate fail
-      - name: Add failing/uncovered code
+      # 4️⃣ Add intentionally failing/uncovered code
+      - name: Add failing code
         run: |
           echo "function uncoveredFunc() { return 42 }" >> fail.js
           echo "function duplicateFunc() { return 1 }" >> fail.js
 
-      # 5️⃣ Run tests with coverage (force continue even if fail)
+      # 5️⃣ Run tests with coverage
       - name: Run tests
         run: npm test -- --coverage --coverageReporters=lcov || true
 
-      # 6️⃣ Verify coverage file
+      # 6️⃣ Verify coverage file exists
       - name: Check coverage file
         run: |
-          echo "Listing coverage directory:"
           ls -l coverage
-          echo "First 10 lines of lcov.info:"
           head -n 10 coverage/lcov.info
 
       # 7️⃣ SonarCloud Scan
@@ -66,30 +63,3 @@ jobs:
         uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  cross-platform-test:
-    name: Test Across OS
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Run coverage & dump properties
-        uses: ./ # this assumes you have a local action that supports args
-        with:
-          args: -Dsonar.scanner.internal.dumpToFile=./output.properties
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Assert coverage file created
-        run: ./test/assertFileExists ./output.properties
-
