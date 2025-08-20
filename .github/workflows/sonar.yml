@@ -1,16 +1,17 @@
 name: SonarCloud PR Analysis
 
 on:
-  pull_request:
-    branches: main
   push:
-    branches: main
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
+
     steps:
-      # 1️⃣ Checkout code
+      # 1️⃣ Checkout repository
       - uses: actions/checkout@v3
 
       # 2️⃣ Set up Node.js
@@ -18,3 +19,44 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Add intentionally uncovered/failing code
+      - name: Add failing code
+        run: |
+          echo "function uncoveredFunc() { return 42 }" >> fail.js
+          echo "function duplicateFunc() { return 1 }" >> fail.js
+
+      # 5️⃣ Run tests with coverage
+      - name: Run tests
+        run: npm test -- --coverage --coverageReporters=lcov || true
+
+      # 6️⃣ Verify coverage file exists
+      - name: Check coverage file
+        run: |
+          ls -l coverage
+          head -n 10 coverage/lcov.info
+
+      # 7️⃣ SonarCloud Scan
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=RADhaigude_react-test
+            -Dsonar.organization=radhaigude
+            -Dsonar.sources=.
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.branch.name=${{ github.ref_name }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 8️⃣ Quality Gate Check
+      - name: Quality Gate Check
+        uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
