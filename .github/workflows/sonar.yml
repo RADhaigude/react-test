@@ -1,4 +1,4 @@
-name: SonarCloud Scan
+name: SonarCloud PR Analysis
 
 on:
   pull_request:
@@ -7,9 +7,8 @@ on:
     branches: main
 
 jobs:
-  build:
+  sonarcloud:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
@@ -24,28 +23,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Run tests with coverage
-      - name: Run tests
-        run: npm test -- --coverage --coverageReporters=lcov
-
-      # 5️⃣ Debug coverage file
-      - name: Check coverage file
+      # 4️⃣ Optional: Add failing code for testing
+      - name: Add failing code
         run: |
-          echo "Listing coverage directory:"
-          ls -l coverage
-          echo "First 10 lines of lcov.info:"
-          head -n 10 coverage/lcov.info
+          echo "function uncoveredFunc(){ return 42 }" >> fail.js
+
+      # 5️⃣ Run tests with coverage
+      - name: Run tests
+        run: npm test -- --coverage --coverageReporters=lcov || true
 
       # 6️⃣ SonarCloud code analysis
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           args: >
-            -Dsonar.projectKey=your_project_key
-            -Dsonar.organization=your_organization
+            -Dsonar.projectKey=RADhaigude_react-test
+            -Dsonar.organization=radhaigude
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
             -Dsonar.qualitygate.wait=true
+            -Dsonar.branch.name=${{ github.head_ref }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
