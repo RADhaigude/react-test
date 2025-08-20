@@ -12,7 +12,8 @@ jobs:
 
     steps:
       # 1️⃣ Checkout repository
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       # 2️⃣ Set up Node.js
       - name: Set up Node
@@ -37,7 +38,9 @@ jobs:
       # 6️⃣ Verify coverage file exists
       - name: Check coverage file
         run: |
+          echo "Listing coverage directory:"
           ls -l coverage
+          echo "First 10 lines of lcov.info:"
           head -n 10 coverage/lcov.info
 
       # 7️⃣ SonarCloud Scan
@@ -51,11 +54,11 @@ jobs:
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
             -Dsonar.qualitygate.wait=true
-            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.branch.name=${{ github.head_ref || 'main' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # 8️⃣ Quality Gate Check
+      # 8️⃣ Quality Gate check
       - name: Quality Gate Check
         uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
         env:
