@@ -1,3 +1,13 @@
+name: SonarCloud Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,7 +24,7 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          projectKey: your_project_key
+          projectKey: react-test
           organization: your_organization
           token: ${{ secrets.SONAR_TOKEN }}
       - name: Quality Gate Check
