@@ -1,31 +1,29 @@
 name: SonarCloud Scan
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Checkout the repository
       - uses: actions/checkout@v3
+
+      # 2️⃣ Set up Node.js
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
-      - name: Run tests
-        run: npm test
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectKey: react-test
-          organization: your_organization
-          token: ${{ secrets.SONAR_TOKEN }}
-      - name: Quality Gate Check
-        uses: SonarSource/sonarcloud-quality-gate-action@master
+
+      # 4️⃣ Run tests with coverage
+      - name
+
