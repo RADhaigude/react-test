@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - main  # Ensure push triggers also run on main branch
+      - main
 
 jobs:
   sonarcloud:
@@ -27,12 +27,24 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Run tests with coverage (do not fail on test errors)
+      # 4️⃣ Run tests with coverage
       - name: Run tests with coverage
         run: |
-          npm test -- --coverage || true
+          npm run test:coverage || true
 
-      # 5️⃣ SonarCloud Scan
+      # 5️⃣ Verify coverage file was created
+      - name: Verify coverage file
+        run: |
+          ls -la coverage/
+          if [ -f "coverage/lcov.info" ]; then
+            echo "Coverage file exists"
+            head -5 coverage/lcov.info
+          else
+            echo "Coverage file not found!"
+            exit 1
+          fi
+
+      # 6️⃣ SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.1
         env:
