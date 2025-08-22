@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - qa
+      - main  # Ensure push triggers also run on main branch
 
 jobs:
   sonarcloud:
@@ -27,13 +27,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Run tests and generate coverage
+      # 4️⃣ Run tests with coverage
       - name: Run tests with coverage
         run: npm test -- --coverage --watchAll=false
 
-      # 5️⃣ SonarCloud analysis
+      # 5️⃣ SonarCloud Scan
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@v2.1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}       # Default GitHub token
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=RADhaigude_react-test
+            -Dsonar.organization=radhaigude
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
