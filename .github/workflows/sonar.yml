@@ -42,8 +42,8 @@ jobs:
           echo "LH:1" >> coverage/lcov.info
           echo "end_of_record" >> coverage/lcov.info
 
-      # 5️⃣ SonarCloud Scan with Quality Gate check
-      - name: SonarCloud Scan
+      # 5️⃣ SonarCloud Scan with Quality Gate
+      - name: SonarCloud Scan with Quality Gate
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
