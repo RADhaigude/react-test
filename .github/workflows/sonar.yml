@@ -10,25 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
       - uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
       - uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 3️⃣ Install dependencies
       - run: npm install
 
-      # 4️⃣ Run tests with Vitest + coverage
+      # 🔹 Run Vitest with coverage
       - run: npx vitest run --coverage
-        # OR if you already have a test script in package.json:
-        # - run: npm run test
 
-      # 5️⃣ SonarCloud Scan
+      # 🔹 SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
