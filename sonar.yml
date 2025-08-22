@@ -1,39 +1,59 @@
-name: SonarCloud Analysis
+name: SonarCloud PR Analysis
 
 on:
-  push:
-    branches: main
   pull_request:
-     branches: qa
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout code
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      # 2️⃣ Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
         with:
-          node-version: 18
+          fetch-depth: 0
 
-      # 3️⃣ Install dependencies
+      # 2️⃣ Set up Node.js
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 3️⃣ Install dependencies including coverage provider
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install -D @vitest/coverage-v8
 
-      # 4️⃣ (Optional) Run tests with coverage
-      # Uncomment below if you want to generate test coverage for Quality Gate
-      # - name: Run Tests
-      #   run: npm test -- --coverage --watchAll=false
+      # 4️⃣ Run tests with coverage
+      - name: Run tests with coverage
+        run: |
+          npx vitest run --coverage --coverage.reporter=lcov || true
 
-      # 5️⃣ Run SonarCloud Scan
+      # 5️⃣ Verify coverage file was created
+      - name: Verify coverage file
+        run: |
+          ls -la coverage/
+          if [ -f "coverage/lcov.info" ]; then
+            echo "Coverage file exists"
+            head -5 coverage/lcov.info
+          else
+            echo "Coverage file not found!"
+            exit 1
+          fi
+
+      # 6️⃣ SonarCloud Scan
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@v2.1
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=RADhaigude_react-test
+            -Dsonar.organization=radhaigude
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
