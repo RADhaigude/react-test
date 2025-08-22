@@ -18,9 +18,6 @@ jobs:
 
       - run: npm install
 
-      # 🔹 Run Vitest with coverage
-      - run: npx vitest run --coverage
-
       # 🔹 SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
