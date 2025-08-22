@@ -1,104 +1,56 @@
-name: SonarCloud PR Analysis
+name: SonarCloud Scan
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
     branches:
-      - main
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   sonarcloud:
+    name: SonarCloud
     runs-on: ubuntu-latest
+
     steps:
       # 1️⃣ Checkout code
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # 2️⃣ Set up Node.js
-      - name: Set up Node
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      # 3️⃣ Install dependencies including coverage provider
+      # 3️⃣ Install dependencies
       - name: Install dependencies
-        run: |
-          npm install
-          npm install -D @vitest/coverage-v8
+        run: npm install
 
-      # 4️⃣ Create vitest config file
-      - name: Create Vitest configuration
-        run: |
-          cat > vitest.config.js << 'EOL'
-          import { defineConfig } from 'vitest/config'
-          import react from '@vitejs/plugin-react'
-
-          export default defineConfig({
-            plugins: [react()],
-            test: {
-              environment: 'jsdom',
-              coverage: {
-                provider: 'v8',
-                reporter: ['text', 'json', 'html', 'lcov'],
-                reportsDirectory: './coverage'
-              }
-            }
-          })
-          EOL
-
-      # 5️⃣ Run tests with coverage (with explicit flags)
+      # 4️⃣ Run tests with coverage (Vitest)
       - name: Run tests with coverage
-        run: |
-          npx vitest run --coverage.enabled=true --coverage.provider=v8 --coverage.reporter=lcov --coverage.reportsDirectory=./coverage || true
+        run: npm run test:coverage
 
-      # 6️⃣ Debug: Check what files were created
-      - name: Debug file structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Files in current directory:"
-          ls -la
-          echo "Checking for coverage directory:"
-          ls -la coverage/ 2>/dev/null || echo "No coverage directory found"
-
-      # 7️⃣ Verify coverage file was created (with fallback)
+      # 5️⃣ Verify coverage file
       - name: Verify coverage file
         run: |
           if [ -f "coverage/lcov.info" ]; then
             echo "✅ Coverage file exists"
-            echo "First 5 lines of coverage file:"
             head -5 coverage/lcov.info
           else
-            echo "❌ Coverage file not found! Creating a minimal one for testing..."
-            mkdir -p coverage
-            # Create a minimal valid lcov file
-            cat > coverage/lcov.info << 'EOF'
-            TN:
-            SF:src/App.jsx
-            FN:1,App
-            FNDA:1,App
-            FNF:1
-            FNH:1
-            BRF:0
-            BRH:0
-            LF:1
-            LH:1
-            end_of_record
-            EOF
-            echo "Created minimal coverage file for testing"
+            echo "❌ Coverage file not found!"
           fi
 
-      # 8️⃣ SonarCloud Scan
+      # 6️⃣ SonarCloud Scan
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.1
+        uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io"
         with:
           args: >
-            -Dsonar.projectKey=RADhaigude_react-test
+            -Dsonar.projectKey=RADhaigude_invoice-generator-react
             -Dsonar.organization=radhaigude
+            -Dsonar.sources=.
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
