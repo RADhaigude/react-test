@@ -23,14 +23,16 @@ jobs:
         with:
           node-version: '18'
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies including coverage provider
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install -D @vitest/coverage-v8
 
       # 4️⃣ Run tests with coverage
       - name: Run tests with coverage
         run: |
-          npm run test:coverage || true
+          npx vitest run --coverage --coverage.reporter=lcov || true
 
       # 5️⃣ Verify coverage file was created
       - name: Verify coverage file
