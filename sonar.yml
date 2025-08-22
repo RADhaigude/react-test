@@ -1,18 +1,21 @@
-name: SonarCloud Scan
+name: SonarCloud PR Analysis
 
 on:
   pull_request:
-    branches: main
+    branches:
+      - main
   push:
-    branches: main
+    branches:
+      - main
 
 jobs:
-  build:
+  sonarcloud:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # required for SonarCloud PR analysis
 
       # 2️⃣ Set up Node.js
       - name: Set up Node
@@ -21,32 +24,15 @@ jobs:
           node-version: '18'
 
       # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - run: npm install
 
-      # 4️⃣ Run tests with coverage
-      - name: Run tests
-        run: npm test -- --coverage --coverageReporters=lcov
+      # 4️⃣ Run tests with coverage (important for Sonar)
+      - run: npm test -- --coverage --watchAll=false
 
-      # 5️⃣ Debug coverage file
-      - name: Check coverage file
-        run: |
-          echo "Listing coverage directory:"
-          ls -l coverage
-          echo "First 10 lines of lcov.info:"
-          head -n 10 coverage/lcov.info
-
-      # 6️⃣ SonarCloud code analysis
+      # 5️⃣ SonarCloud Scan
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v1.11
-        with:
-          projectKey: your_project_key         # Replace with your SonarCloud project key
-          organization: your_organization     # Replace with your SonarCloud organization
-          token: ${{ secrets.SONAR_TOKEN }}   # Make sure SONAR_TOKEN is added in GitHub Secrets
-          args: >
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Needed for PR comments
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # 7️⃣ Quality Gate check
-      - name: Quality Gate Check
-        uses: SonarSource/sonarcloud-quality-gate-action@v1
