@@ -1,37 +1,98 @@
-name: SonarCloud PR Analysis
+
+name: CI - Build, Test, SonarCloud
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
     branches:
       - main
+      - dev
+      - qa
+      - master
+  pull_request:
+    branches:
+      - main
+      - dev
+      - qa
 
 jobs:
-  sonarcloud:
+  backend:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout code
-      - uses: actions/checkout@v3
+      # 1️⃣ Checkout repository
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Setup .NET
+      - uses: actions/setup-dotnet@v4
         with:
-          fetch-depth: 0  # required for SonarCloud PR analysis
+          dotnet-version: '7.0.x'
 
-      # 2️⃣ Set up Node.js
-      - name: Set up Node
-        uses: actions/setup-node@v3
+      # 3️⃣ Build & Test Backend
+      - name: Build & Test Backend
+        run: |
+          cd backend
+          dotnet restore
+          dotnet build --configuration Release
+          dotnet test --configuration Release --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      # 4️⃣ Upload Test Results (optional)
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '18'
+          name: backend-test-results
+          path: backend/TestResults
 
-      # 3️⃣ Install dependencies
-      - run: npm install
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout repository
+      - uses: actions/checkout@v4
 
-      # 4️⃣ Run tests with coverage (important for Sonar)
-      - run: npm test -- --coverage --watchAll=false
+      # 2️⃣ Setup Node.js
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-      # 5️⃣ SonarCloud Scan
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Needed for PR comments
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # 3️⃣ Build & Test Frontend
+      - name: Build & Test Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run test -- --watch=false --code-coverage
+
+      # 4️⃣ Upload Coverage (optional)
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]   # wait for both jobs
+    steps:
+      # 1️⃣ Checkout
+      - uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js (for sonar-scanner install)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 3️⃣ Prepare sonar-project.properties
+      - name: Prepare SonarCloud properties
+        run: |
+          echo "sonar.organization=radhaigude" > sonar-project.properties
+          echo "sonar.projectKey=RADhaigude_invoice-generator-react" >> sonar-project.properties
+          echo "sonar.projectName=Invoice Generator React" >> sonar-project.properties
+          echo "sonar.sources=frontend/src,backend" >> sonar-project.properties
+          echo "sonar.sourceEncoding=UTF-8" >> sonar-project.properties
+          echo "sonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info" >> sonar-project.properties
+          echo "sonar.cs.opencover.reportsPaths=backend/TestResults/**/coverage.opencover.xml" >> sonar-project.properties
+
+      # 4️⃣ Install sonar-scanner
+      - run: npm install -g sonar-scanner
+        name: Install SonarScanner
+
+      # 5️⃣ Run SonarCloud Analysis
+      - run: sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.host.url=https://sonarcloud.io
+        name: Run SonarCloud scan
