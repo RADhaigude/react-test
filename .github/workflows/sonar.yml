@@ -1,50 +1,33 @@
-name: CI with SonarCloud
+name: SonarCloud Check
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
 
 jobs:
-  build:
+  sonarcloud:
     runs-on: ubuntu-latest
 
     steps:
       # 1️⃣ Checkout code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       # 2️⃣ Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
 
       # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - run: npm install
 
-      # 4️⃣ Run Vitest with coverage
-      - name: Run Vitest tests with coverage
-        run: npm run test -- --coverage
+      # 4️⃣ Run tests (Vitest or Jest)
+      - run: npm run test -- --coverage
 
-      # 5️⃣ Prepare SonarCloud properties
-      - name: Prepare SonarCloud properties
-        run: |
-          echo "sonar.organization=radhaigude" > sonar-project.properties
-          echo "sonar.projectKey=RADhaigude_invoice-react" >> sonar-project.properties
-          echo "sonar.projectName=Invoice Generator React" >> sonar-project.properties
-          echo "sonar.sources=src" >> sonar-project.properties
-          echo "sonar.sourceEncoding=UTF-8" >> sonar-project.properties
-          echo "sonar.javascript.lcov.reportPaths=coverage/lcov.info" >> sonar-project.properties
+      # 5️⃣ Run SonarCloud Scan (official action)
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6️⃣ Install SonarScanner
-      - name: Install SonarScanner
-        run: npm install -g sonar-scanner
-
-      # 7️⃣ Run SonarCloud Analysis
-      - name: Run SonarCloud Analysis
-        run: |
-          sonar-scanner \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
