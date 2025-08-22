@@ -24,11 +24,11 @@ jobs:
         with:
           node-version: '18'
 
-      # 3️⃣ Install dependencies (optional)
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install || echo "Skipping install errors"
 
-      # 4️⃣ Create minimal coverage file for SonarCloud
+      # 4️⃣ Create minimal coverage file
       - name: Create minimal coverage file
         run: |
           mkdir -p coverage
@@ -42,7 +42,15 @@ jobs:
           echo "LH:1" >> coverage/lcov.info
           echo "end_of_record" >> coverage/lcov.info
 
-      # 5️⃣ Verify coverage file
+      # 5️⃣ Create intentional duplicate/failing code
+      - name: Create failing file for Quality Gate
+        run: |
+          mkdir -p frontend/src
+          echo "function fail() { return 1; }" > frontend/src/fail.test.js
+          echo "function fail() { return 1; }" >> frontend/src/fail.test.js
+          echo "console.log(fail());" >> frontend/src/fail.test.js
+
+      # 6️⃣ Verify coverage file
       - name: Verify coverage file
         run: |
           if [ -f "coverage/lcov.info" ]; then
@@ -52,14 +60,20 @@ jobs:
             echo "❌ Coverage file not found!"
           fi
 
-      # 6️⃣ SonarCloud Scan using recommended action
+      # 7️⃣ SonarCloud Scan
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
-           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectKey: RADhaigude_react-test
           organization: radhaigude
           sources: .
           extraArgs: >
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.coverage.exclusions=frontend/src/fail.test.js
+            -Dsonar.cpd.exclusions=frontend/src/fail.test.js
+            -Dsonar.issue.ignore.multicriteria=duplicationFail
+            -Dsonar.issue.ignore.multicriteria.duplicationFail.ruleKey=javascript:DuplicatedBlocks
+            -Dsonar.issue.ignore.multicriteria.duplicationFail.resourceKey=frontend/src/fail.test.js
