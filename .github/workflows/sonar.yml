@@ -1,21 +1,21 @@
-
 name: SonarCloud PR Analysis
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
   sonarcloud:
     runs-on: ubuntu-latest
-
     steps:
       # 1️⃣ Checkout code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # required for SonarCloud PR analysis
 
       # 2️⃣ Set up Node.js
       - name: Set up Node
@@ -24,42 +24,14 @@ jobs:
           node-version: '18'
 
       # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - run: npm install
 
-      # 4️⃣ Add intentionally failing/uncovered code
-      - name: Add failing code
-        run: |
-          echo "function uncoveredFunc() { return 42 }" >> fail.js
-          echo "function duplicateFunc() { return 1 }" >> fail.js
+      # 4️⃣ Run tests with coverage (important for Sonar)
+      - run: npm test -- --coverage --watchAll=false
 
-      # 5️⃣ Run tests with coverage
-      - name: Run tests
-        run: npm test -- --coverage --coverageReporters=lcov || true
-
-      # 6️⃣ Verify coverage file exists
-      - name: Check coverage file
-        run: |
-          ls -l coverage
-          head -n 10 coverage/lcov.info
-
-      # 7️⃣ SonarCloud Scan
+      # 5️⃣ SonarCloud Scan
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          args: >
-            -Dsonar.projectKey=RADhaigude_react-test
-            -Dsonar.organization=radhaigude
-            -Dsonar.sources=.
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.exclusions="**/node_modules/**,**/*.test.js"
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.branch.name=${{ github.head_ref || 'main' }}
+        uses: SonarSource/sonarcloud-github-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      # 8️⃣ Quality Gate Check
-      - name: Quality Gate Check
-        uses: SonarSource/sonarcloud-quality-gate-action@v1.0.1
-        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Needed for PR comments
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
