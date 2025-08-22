@@ -1,12 +1,12 @@
-name: SonarCloud Scan
+name: SonarCloud PR Analysis
 
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   sonarcloud:
@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Run tests with coverage (Vitest)
+      # 4️⃣ Run tests with coverage
       - name: Run tests with coverage
         run: npm run test:coverage
 
@@ -54,3 +54,4 @@ jobs:
             -Dsonar.organization=radhaigude
             -Dsonar.sources=.
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+
