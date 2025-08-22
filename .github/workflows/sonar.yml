@@ -56,7 +56,7 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectKey: RADhaigude_react-test
           organization: radhaigude
